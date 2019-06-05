@@ -115,6 +115,7 @@ public class Model {
 		if(parziale.size()>ottima.size()) {
 			this.ottima = new LinkedList<>(parziale);
 		}
+		//ottengo tutti i candidati
 		List<String> candidati = this.getSuccessori(parziale.get(parziale.size()-1));
 		for(String candidato : candidati) {
 			if(!parziale.contains(candidato)) {
