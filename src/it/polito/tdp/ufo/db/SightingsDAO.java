@@ -4,9 +4,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Year;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
+import it.polito.tdp.ufo.model.AnnoCount;
 import it.polito.tdp.ufo.model.Sighting;
 
 public class SightingsDAO {
@@ -51,5 +54,98 @@ public class SightingsDAO {
 			return null ;
 		}
 	}
+	
+	public List<AnnoCount> getAnni(){
+		String sql = "select year(datetime) as anno, count(id) as cnt " + 
+				"from sighting " + 
+				"where country = \"us\" " + 
+				"group by year(datetime) " ;
+		
+		try {
+			Connection conn = DBConnect.getConnection() ;
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			List<AnnoCount> anni = new LinkedList<>() ;
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+					anni.add(new AnnoCount(Year.of(res.getInt("anno")), res.getInt("cnt")));
+			}
+			
+			conn.close();
+			return anni ;
 
-}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null ;
+		}
+		
+	}
+	
+	public List<String> getStati(Year anno){
+		String sql = "select distinct state " + 
+				"from sighting " + 
+				"where country = 'us' " +
+				"and Year(datetime) = ? ";
+		try {
+			Connection conn = DBConnect.getConnection() ;
+
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			st.setInt(1, anno.getValue());;
+			List<String> stati = new LinkedList<>() ;
+			
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+
+					stati.add(res.getString("state"));
+			}
+			conn.close();
+			return stati ;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null ;
+		}
+		
+	}
+
+	public boolean esisteArco(String s1, String s2, Year anno) {
+		
+		String sql = "select count(*) as cnt " + 
+				"from sighting s1, sighting s2 " + 
+				"where year(s1.datetime) = year(s2.datetime) " + 
+				"and year(s1.datetime) = ? " + 
+				"and s1.state = ? and s2.state = ? " + 
+				"and s1.country = 'us' and s2.country = 'us' " + 
+				"and s2.datetime > s1.datetime " + 
+				"";
+		try {
+			Connection conn = DBConnect.getConnection() ;
+
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			st.setInt(1,anno.getValue());
+			st.setString(2, s1);
+			st.setString(3, s2);
+			
+			ResultSet res = st.executeQuery() ;
+			
+			if(res.next()) {
+				if(res.getInt("cnt")>0) {
+					conn.close();
+					return true;
+				} else {
+					conn.close();
+					return false;
+				}
+			}else {
+				return false;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false ;
+		}
+	}
+	
+	
+	}
+
